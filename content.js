@@ -152,20 +152,6 @@
                     if (decoded) return resolve(decoded);
                 }
 
-                // Fallback: downscaling progressivo (0.9 -> 0.3) para QR codes grandes/customizados.
-                for (let scale = 0.9; scale >= 0.3; scale -= 0.1) {
-                    const safeScale = Number(scale.toFixed(1));
-
-                    let decoded = runAttempt(() => drawBase(safeScale, true));
-                    if (decoded) return resolve(decoded);
-
-                    decoded = runAttempt(() => {
-                        drawBase(safeScale, true);
-                        boostContrast(1.9, null);
-                    });
-                    if (decoded) return resolve(decoded);
-                }
-
                 resolve(null);
             };
             img.src = base64Img;
