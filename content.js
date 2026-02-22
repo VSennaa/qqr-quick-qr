@@ -67,24 +67,7 @@
                 const sourceCtx = sourceCanvas.getContext('2d');
                 const workCanvas = document.createElement('canvas');
                 const workCtx = workCanvas.getContext('2d');
-                const sourceCanvas = document.createElement('canvas');
-                const sourceCtx = sourceCanvas.getContext('2d');
-                const workCanvas = document.createElement('canvas');
-                const workCtx = workCanvas.getContext('2d');
 
-                // Coordenadas com margem para recuperar a quiet zone que o usuário pode cortar.
-                const rawLeft = Math.min(x1, x2);
-                const rawTop = Math.min(y1, y2);
-                const rawWidth = Math.abs(x1 - x2);
-                const rawHeight = Math.abs(y1 - y2);
-                const margin = Math.max(8, Math.round(Math.max(rawWidth, rawHeight) * 0.08));
-
-                const sx = Math.max(0, Math.floor((rawLeft - margin) * dpi));
-                const sy = Math.max(0, Math.floor((rawTop - margin) * dpi));
-                const sMaxX = Math.min(img.width, Math.ceil((rawLeft + rawWidth + margin) * dpi));
-                const sMaxY = Math.min(img.height, Math.ceil((rawTop + rawHeight + margin) * dpi));
-                const sw = sMaxX - sx;
-                const sh = sMaxY - sy;
                 // Coordenadas com margem para recuperar a quiet zone que o usuário pode cortar.
                 const rawLeft = Math.min(x1, x2);
                 const rawTop = Math.min(y1, y2);
@@ -100,26 +83,13 @@
                 const sh = sMaxY - sy;
 
                 if (sw < 12 || sh < 12) return resolve(null);
-                if (sw < 12 || sh < 12) return resolve(null);
 
-                sourceCanvas.width = sw;
-                sourceCanvas.height = sh;
-                sourceCtx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-
-                const scanWithJsQR = () => {
                 sourceCanvas.width = sw;
                 sourceCanvas.height = sh;
                 sourceCtx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
 
                 const scanWithJsQR = () => {
                     try {
-                        const imageData = workCtx.getImageData(0, 0, workCanvas.width, workCanvas.height);
-                        return jsQR(imageData.data, imageData.width, imageData.height, {
-                            inversionAttempts: 'attemptBoth'
-                        });
-                    } catch (e) {
-                        return null;
-                    }
                         const imageData = workCtx.getImageData(0, 0, workCanvas.width, workCanvas.height);
                         return jsQR(imageData.data, imageData.width, imageData.height, {
                             inversionAttempts: 'attemptBoth'
@@ -193,58 +163,6 @@
                         drawBase(safeScale, true);
                         boostContrast(1.9, null);
                     });
-                    if (decoded) return resolve(decoded);
-                }
-                const drawBase = (scale = 1, smoothing = true) => {
-                    workCanvas.width = Math.max(1, Math.floor(sw * scale));
-                    workCanvas.height = Math.max(1, Math.floor(sh * scale));
-                    workCtx.filter = 'none';
-                    workCtx.imageSmoothingEnabled = smoothing;
-                    workCtx.drawImage(sourceCanvas, 0, 0, sw, sh, 0, 0, workCanvas.width, workCanvas.height);
-                };
-
-                const boostContrast = (contrast = 1.6, threshold = null) => {
-                    const imageData = workCtx.getImageData(0, 0, workCanvas.width, workCanvas.height);
-                    const data = imageData.data;
-                    for (let i = 0; i < data.length; i += 4) {
-                        const gray = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
-                        const adjusted = Math.max(0, Math.min(255, (gray - 128) * contrast + 128));
-                        const value = threshold === null ? adjusted : (adjusted >= threshold ? 255 : 0);
-                        data[i] = value;
-                        data[i + 1] = value;
-                        data[i + 2] = value;
-                    }
-                    workCtx.putImageData(imageData, 0, 0);
-                };
-
-                const runAttempt = (drawer) => {
-                    drawer();
-                    const result = scanWithJsQR();
-                    return result ? result.data : null;
-                };
-
-                const attempts = [
-                    () => drawBase(1, true),
-                    () => {
-                        drawBase(1, true);
-                        boostContrast(1.8, null);
-                    },
-                    () => {
-                        drawBase(1, true);
-                        boostContrast(2.2, 150);
-                    },
-                    () => {
-                        drawBase(2, false);
-                        boostContrast(1.5, null);
-                    },
-                    () => {
-                        drawBase(2, false);
-                        boostContrast(2.0, 145);
-                    }
-                ];
-
-                for (const attempt of attempts) {
-                    const decoded = runAttempt(attempt);
                     if (decoded) return resolve(decoded);
                 }
 
